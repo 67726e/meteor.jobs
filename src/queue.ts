@@ -49,7 +49,7 @@ class Queue {
 		}
 	}
 
-	public start() {
+	public async start() {
 		if (this.queryHandle) {
 			if (this.queryHandle !== QUEUE_PAUSED) {
 				// TODO: Refactor me... shouldn't overload functions like this
@@ -63,13 +63,13 @@ class Queue {
 		Logger.log('Jobs', 'queue.start paused:', pausedJobs);
 
 		// TODO: What if N jobs...
-			// Don't assume a database is going to work as expected...
+		// Don't assume a database is going to work as expected...
 		if (pausedJobs[0] === '*') {
 			// Update handle to paused state...
 			this.queryHandle = QUEUE_PAUSED;
 		} else {
 			// Create long-living query to watch for incoming jobs...
-			this.queryHandle = this.configuration.jobCollection.find({
+			this.queryHandle = await this.configuration.jobCollection.find({
 				state: 'pending',
 				name: { $nin: pausedJobs },
 			}, {
@@ -105,22 +105,22 @@ class Queue {
 			if (nextJob) {
 				// TODO: Handle / Document Calculation... what if `Date.now() > `nextJob.due`, etc.
 				const delay = nextJob.due.valueOf() - Date.now();
-	
+
 				// Maximum 24 Hours Timeout - Otherwise, NodeJS Issues...
 				// See: https://github.com/wildhart/meteor.jobs/issues/5
 				const nextJobDelay = Math.min(QUEUE_MILLISECOND_MAX_TIMEOUT, delay);
-	
+
 				Timer.startQueueExecutionTimer(() => {
 					Timer.stopQueueExecutionTimer();
 
 					this.executeJobs();
 				}, nextJobDelay);
-			}	
+			}
 		}
 	}
 
 	private findNextJob(executedJob: null | JobDocument, executedJobs: JobDocument[], pausedJobs: string[]) {
-		return this.configuration.jobCollection.findOne({
+		return this.configuration.jobCollection.findOneAsync({
 			state: 'pending',
 			due: { $lte: new Date(), },
 
@@ -140,9 +140,9 @@ class Queue {
 		});
 	}
 
-	private executeJobs() {
+	private async executeJobs() {
 		// TODO: Review for race-condition
-			// Fix or Document Safety...
+		// Fix or Document Safety...
 		if (this.executing) {
 			console.warn('already executing!');
 
@@ -173,14 +173,14 @@ class Queue {
 				do {
 					// TODO: IMPLEMENT ME! - pass to configuration...
 					// always use the live version of dominator.lastPing.pausedJobs in case jobs are paused/restarted while executing
-					const lastPing = this.configuration.serverCollection.findOne({}, { fields: { pausedJobs: 1 } });
+					const lastPing = await this.configuration.serverCollection.findOneAsync({}, { fields: { pausedJobs: 1 } });
 					const pausedJobs = lastPing?.pausedJobs || [];
 
-					const job: undefined | JobDocument = this.findNextJob(executedJob, executedJobs, pausedJobs);
+					const job: undefined | JobDocument = await this.findNextJob(executedJob, executedJobs, pausedJobs);
 
 					if (job) {
 						executedJob = job;
-						executedJobs = [ ...executedJobs, job, ];
+						executedJobs = [...executedJobs, job,];
 
 						this.executeJob(job);
 					} else {
@@ -189,17 +189,17 @@ class Queue {
 
 						// TODO: Implement Me! - Logger?
 					}
-				// Continue executing if we are not in a paused state
-				// Continue executing if we are not out of jobs (found a job on current iteration...)
+					// Continue executing if we are not in a paused state
+					// Continue executing if we are not out of jobs (found a job on current iteration...)
 				} while (!isPaused() && executedJob != null);
-			// Continue executing if we are not in a paused state
-			// Continue executing if we are not out of jobs (found N > 0 jobs on current iteration...)
+				// Continue executing if we are not in a paused state
+				// Continue executing if we are not out of jobs (found N > 0 jobs on current iteration...)
 			} while (!isPaused() && executedJobs.length > 0);
 		} catch (error) {
 			console.warn('Jobs', 'executeJobs ERROR');
-			console.warn(error);	
+			console.warn(error);
 		}
-		
+
 		// Update no longer executing jobs, restart timer via `this.start()`...
 		this.executing = false;
 
@@ -323,8 +323,8 @@ class Queue {
 		}
 	}
 
-	private updateJobState(jobId: string, state: JobState) {
-		const count = this.configuration.jobCollection.update({ _id: jobId }, { $set: { state, }});
+	private async updateJobState(jobId: string, state: JobState) {
+		const count = await this.configuration.jobCollection.updateAsync({ _id: jobId }, { $set: { state, } });
 
 		Logger.log('Jobs', 'setJobState', jobId, state, count);
 	}

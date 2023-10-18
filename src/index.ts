@@ -8,10 +8,10 @@ import { Dominator } from './dominator';
 import { Jobs } from './job';
 import { Logger } from './logger';
 
-Meteor.startup(() => {
+Meteor.startup(async () => {
     Logger.log('Jobs', `Meteor.startup, startupDelay: ${Configuration.get().startupDelay / 1000}s...`);
 
-    ServerCollection.remove({ _id: { $ne: DOMINATOR_ID } });
+    await ServerCollection.removeAsync({ _id: { $ne: DOMINATOR_ID } });
 
     Meteor.setTimeout(() => Dominator.initialize(), Configuration.get().startupDelay);
 });
