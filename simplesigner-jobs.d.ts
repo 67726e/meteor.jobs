@@ -27,7 +27,7 @@ declare module 'meteor/simplesigner:jobs' {
 	    private lastPing;
 	    private serverId;
 	    constructor(configuration: DominatorConfiguration);
-	    initialize(): void;
+	    initialize(): Promise<void>;
 	    private upgradeToMaster;
 	    private downgradeToSlave;
 	    private observe;
@@ -45,7 +45,7 @@ declare module 'meteor/simplesigner:jobs' {
 	interface JobConfiguration {
 	    jobCollection: Mongo.Collection<JobDocument>;
 	}
-	declare class Jobs {
+	declare class JobsClass {
 	    private readonly configuration;
 	    collection: Mongo.Collection<JobDocument>;
 	    jobs: JobFunctionMap;
@@ -53,19 +53,19 @@ declare module 'meteor/simplesigner:jobs' {
 	    clear(state?: '*' | JobState | JobState[], jobName?: string, ...parameters: any[]): number;
 	    configure(settings: Partial<Config>): void;
 	    count(jobName: string, ...parameters: any[]): number;
-	    countPending(jobName: string, ...parameters: any[]): number;
-	    execute(jobId: string): void;
-	    findOne(jobName: string, ...parameters: any[]): JobDocument;
+	    countPending(jobName: string, ...parameters: any[]): Promise<number>;
+	    execute(jobId: string): Promise<void>;
+	    findOne(jobName: string, ...parameters: any[]): Promise<JobDocument>;
 	    register(jobFunctionMap: JobFunctionMap): void;
 	    remove(jobId: string): boolean;
-	    replicate(jobId: string, configuration: Partial<JobConfig>): string;
+	    replicate(jobId: string, configuration: Partial<JobConfig>): Promise<string>;
 	    reschedule(jobId: string, configuration: Partial<JobConfig>): void;
-	    run(jobName: string, ...parameters: any[]): false | JobDocument;
+	    run(jobName: string, ...parameters: any[]): Promise<false | JobDocument>;
 	    start(jobArgument?: string | string[]): void;
 	    stop(jobArgument?: string | string[]): void;
 	}
-	declare const instance: Jobs;
-	export { instance as Jobs };
+	declare const Jobs: JobsClass;
+	export { Jobs };
 	import { Config } from './types';
 	declare class Logger {
 	    error: {
@@ -160,7 +160,7 @@ declare module 'meteor/simplesigner:jobs' {
 	}
 	export interface JobThisType {
 	    document: JobDocument;
-	    replicate(config: Partial<JobConfig>): string | null;
+	    replicate(config: Partial<JobConfig>): Promise<string | null>;
 	    reschedule(config: Partial<JobConfig>): void;
 	    remove(): boolean;
 	    success(): void;
