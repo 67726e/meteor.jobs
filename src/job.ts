@@ -80,7 +80,7 @@ interface JobConfiguration {
     jobCollection: Mongo.Collection<JobDocument>,
 }
 
-class Jobs {
+class JobsClass {
     // TODO: Refactor Away...
     public collection: Mongo.Collection<JobDocument>;
     // TODO: Refactor Away...
@@ -390,8 +390,8 @@ class Jobs {
     }
 }
 
-const instance = new Jobs({
+const Jobs = new JobsClass({
     jobCollection: JobCollection,
 });
 
-export { instance as Jobs };
+export { Jobs };
