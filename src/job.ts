@@ -42,7 +42,7 @@ function getDateFromJobConfiguration(config: Partial<JobConfig>) {
                         console.warn('Jobs', `invalid type was input: {key1}.{key2}`, newNumber)
                     } else {
                         // convert month(s) => months (etc), and day(s) => date and year(s) => fullYear
-                        fn = (key2 + "s").replace('ss', 's').replace('days','date').replace('years','fullYear').replace('months','month');
+                        fn = (key2 + "s").replace('ss', 's').replace('days', 'date').replace('years', 'fullYear').replace('months', 'month');
                         // convert months => Months
                         fn = fn.charAt(0).toUpperCase() + fn.slice(1);
                         // if key1=='in' currentDate.setMonth(newNumber + currentDate.getMonth())
@@ -87,7 +87,7 @@ class Jobs {
     // TODO: Rename `jobFunctionMap`
     public jobs: JobFunctionMap = {};
 
-    constructor(
+    constructor (
         private readonly configuration: JobConfiguration,
     ) {
         this.collection = this.configuration.jobCollection;
@@ -153,16 +153,16 @@ class Jobs {
 
     public configure(settings: Partial<Config>) {
         // TODO: Review Me!
-		check(settings, {
-			autoStart: Match.Maybe(Boolean),
-			defaultCompletion: Match.Maybe(Match.Where((val => /^(success|remove)$/.test(val)))),
-		    error: Match.Maybe(Match.OneOf(undefined, null, Boolean, Function)),
-			log: Match.Maybe(Match.OneOf(undefined, null, Boolean, Function)),
-			warn: Match.Maybe(Match.OneOf(undefined, null, Boolean, Function)),
-			maxWait: Match.Maybe(Number),
-			setServerId: Match.Maybe(Match.OneOf(String, Function)),
-			startupDelay: Match.Maybe(Number),
-		});
+        check(settings, {
+            autoStart: Match.Maybe(Boolean),
+            defaultCompletion: Match.Maybe(Match.Where((val => /^(success|remove)$/.test(val)))),
+            error: Match.Maybe(Match.OneOf(undefined, null, Boolean, Function)),
+            log: Match.Maybe(Match.OneOf(undefined, null, Boolean, Function)),
+            warn: Match.Maybe(Match.OneOf(undefined, null, Boolean, Function)),
+            maxWait: Match.Maybe(Number),
+            setServerId: Match.Maybe(Match.OneOf(String, Function)),
+            startupDelay: Match.Maybe(Number),
+        });
 
         Configuration.configure(settings);
 
@@ -173,71 +173,71 @@ class Jobs {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
-		const query: Mongo.Query<JobDocument> = {
-			name: jobName,
-		};
+        const query: Mongo.Query<JobDocument> = {
+            name: jobName,
+        };
 
         // TODO: Refactor into `reduce` ???
         parameters.forEach((parameter, index) => {
             query["arguments." + index] = parameter;
         });
 
-        return this.configuration.jobCollection.find(query).count();    
+        return this.configuration.jobCollection.find(query).count();
     }
 
     public countPending(jobName: string, ...parameters: any[]) {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
-		const query: Mongo.Query<JobDocument> = {
-			name: jobName,
+        const query: Mongo.Query<JobDocument> = {
+            name: jobName,
             state: 'pending',
-		};
+        };
 
         // TODO: Refactor into `reduce` ???
         parameters.forEach((parameter, index) => {
             query["arguments." + index] = parameter;
         });
-		
-        return this.configuration.jobCollection.find(query).count();
+
+        return this.configuration.jobCollection.find(query).countAsync();
     }
 
-    public execute(jobId: string) {
+    public async execute(jobId: string) {
         check(jobId, String);
 
         Logger.log('Jobs', 'Jobs.execute', jobId);
 
-        const job = this.configuration.jobCollection.findOne(jobId);
+        const job = await this.configuration.jobCollection.findOneAsync(jobId);
 
         if (!job) {
-			console.warn('Jobs', 'Jobs.execute', 'JOB NOT FOUND', jobId);
+            console.warn('Jobs', 'Jobs.execute', 'JOB NOT FOUND', jobId);
 
             return;
         }
 
         if (job.state != 'pending') {
-			console.warn('Jobs', 'Jobs.execute', 'JOB IS NOT PENDING', job);
+            console.warn('Jobs', 'Jobs.execute', 'JOB IS NOT PENDING', job);
             return;
         }
 
         Queue.executeJob(job);
     }
 
-	public findOne(jobName: string, ...parameters: any[]) {
-		check(jobName, String);
+    public async findOne(jobName: string, ...parameters: any[]) {
+        check(jobName, String);
         // TODO: Verify `parameters` ???
 
-		const query: Mongo.Query<JobDocument> = {
-			name: jobName,
-		};
+        const query: Mongo.Query<JobDocument> = {
+            name: jobName,
+        };
 
         // TODO: Refactor into `reduce` ???
         parameters.forEach((parameter, index) => {
             query["arguments." + index] = parameter;
         });
 
-        return this.configuration.jobCollection.findOne(query);
-	}
+        return await this.configuration.jobCollection.findOneAsync(query);
+    }
 
     public register(jobFunctionMap: JobFunctionMap) {
         // TODO: Verify Type! - `check(..., Object)` is not sufficient!
@@ -249,7 +249,7 @@ class Jobs {
             jobFunctionMap,
         );
 
-		// log('Jobs', 'Jobs.register', Object.keys(jobs).length, Object.keys(newJobs).join(', '));
+        // log('Jobs', 'Jobs.register', Object.keys(jobs).length, Object.keys(newJobs).join(', '));
     }
 
     public remove(jobId: string) {
@@ -262,11 +262,11 @@ class Jobs {
         return count > 0;
     }
 
-    public replicate(jobId: string, configuration: Partial<JobConfig>) {
+    public async replicate(jobId: string, configuration: Partial<JobConfig>) {
         check(jobId, String);
         // TODO: Verify `configuration`
 
-        const job = this.configuration.jobCollection.findOne(jobId);
+        const job = await this.configuration.jobCollection.findOneAsync(jobId);
 
         if (!job) {
             console.warn('Jobs', '    Jobs.replicate', 'JOB NOT FOUND', jobId);
@@ -285,16 +285,16 @@ class Jobs {
         delete replicatedJob._id;
 
         // Create Job Document in Mongo...
-        const replicatedJobId = this.configuration.jobCollection.insert(replicatedJob);
+        const replicatedJobId = await this.configuration.jobCollection.insertAsync(replicatedJob);
 
         Logger.log('Jobs', '    Jobs.replicate', jobId, configuration);
 
         return replicatedJobId;
     }
 
-    public reschedule(jobId: string, configuration: Partial<JobConfig>) {
+    public async reschedule(jobId: string, configuration: Partial<JobConfig>) {
         check(jobId, String);
-        // TODO: Verify `configuration` 
+        // TODO: Verify `configuration`
 
         const update: Partial<JobDocument> = {
             due: getDateFromJobConfiguration(configuration),
@@ -304,7 +304,7 @@ class Jobs {
         if (configuration.priority)
             update.priority = configuration.priority;
 
-        const count = this.configuration.jobCollection.update({ _id: jobId }, { $set: update });
+        const count = await this.configuration.jobCollection.updateAsync({ _id: jobId }, { $set: update });
 
         Logger.log('Jobs', '    Jobs.reschedule', jobId, configuration, update.due, count);
 
@@ -315,11 +315,11 @@ class Jobs {
             configuration.callback(count === 0, count);
     }
 
-    public run(jobName: string, ...parameters: any[]) {
+    public async run(jobName: string, ...parameters: any[]) {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
-		Logger.log('Jobs', 'Jobs.run', jobName, parameters.length && parameters[0]);
+        Logger.log('Jobs', 'Jobs.run', jobName, parameters.length && parameters[0]);
 
         let configuration: null | Partial<JobConfig> = parameters[0] as Partial<JobConfig> || null;
 
@@ -338,10 +338,10 @@ class Jobs {
         }
 
         // If a job is `singular`, only one can execute concurrently with the name name and arguments
-        // TODO: This should probably not be a thing... 
+        // TODO: This should probably not be a thing...
         //  One should be able to queue N jobs with a one-at-a-time execution limit
         if (configuration?.singular) {
-            if (this.countPending(jobName, parameters[1].slice()) > 0) {
+            if (await this.countPending(jobName, parameters[1]?.slice()) > 0) {
                 error = 'Singular job already exists';
             }
         }
@@ -363,10 +363,10 @@ class Jobs {
             priority: configuration?.priority || 0,
             awaitAsync: configuration?.awaitAsync || undefined,
             due: (configuration) ? getDateFromJobConfiguration(configuration) : new Date(),
-            arguments: (configuration) ? parameters[1].slice() : parameters,
+            arguments: (configuration) ? parameters[1]?.slice() : parameters,
         };
 
-        const jobId = this.configuration.jobCollection.insert(job);
+        const jobId = await this.configuration.jobCollection.insertAsync(job);
 
         if (jobId) {
             job._id = jobId;
