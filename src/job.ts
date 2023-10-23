@@ -19,7 +19,7 @@ import {
 
 // TODO: Review Me!
 // TODO: Test Me!
-function getDateFromJobConfiguration(config: Partial<JobConfig>) {
+function getDateFromJobConfiguration (config: Partial<JobConfig>) {
     // https://github.com/msavin/SteveJobs..meteor.jobs.scheduler.queue.background.tasks/blob/031fdf5051b2f2581a47f64ab5b54ffbb6893cf8/package/server/imports/utilities/helpers/date.js
     check(config, Match.ObjectIncluding({
         date: Match.Maybe(Date),
@@ -62,7 +62,7 @@ function getDateFromJobConfiguration(config: Partial<JobConfig>) {
 
 const jobConfigurationProperties: Array<keyof JobConfig> = ['in', 'on', 'priority', 'date', 'callback', 'singular', 'unique', 'awaitAsync']
 
-function isJobConfiguration(configuration: any) {
+function isJobConfiguration (configuration: any) {
     if (configuration !== null && configuration !== undefined) {
         if (typeof configuration === 'object') {
             // TODO: Should we be checking types here too... ???
@@ -93,7 +93,7 @@ class JobsClass {
         this.collection = this.configuration.jobCollection;
     }
 
-    public clear(state?: '*' | JobState | JobState[], jobName?: string, ...parameters: any[]) {
+    public async clear (state?: '*' | JobState | JobState[], jobName?: string, ...parameters: any[]) {
         const query: Mongo.Query<JobDocument> = {};
 
         // Add `state` Predicate to `query`
@@ -134,7 +134,7 @@ class JobsClass {
                 query['arguments.' + index] = parameter;
             });
 
-            const count = this.configuration.jobCollection.remove(query);
+            const count = await this.configuration.jobCollection.removeAsync(query);
 
             // TODO: Why `null` ???
             //  Compare with `reschedule` callback...
@@ -147,11 +147,11 @@ class JobsClass {
                 query['arguments.' + index] = parameter;
             });
 
-            return this.configuration.jobCollection.remove(query);
+            return await this.configuration.jobCollection.removeAsync(query);
         }
     }
 
-    public configure(settings: Partial<Config>) {
+    public configure (settings: Partial<Config>) {
         // TODO: Review Me!
         check(settings, {
             autoStart: Match.Maybe(Boolean),
@@ -169,7 +169,7 @@ class JobsClass {
         Logger.log('Jobs', 'Jobs.configure', Object.keys(settings));
     }
 
-    public count(jobName: string, ...parameters: any[]) {
+    public count (jobName: string, ...parameters: any[]) {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -185,7 +185,7 @@ class JobsClass {
         return this.configuration.jobCollection.find(query).count();
     }
 
-    public countPending(jobName: string, ...parameters: any[]) {
+    public countPending (jobName: string, ...parameters: any[]) {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -202,7 +202,7 @@ class JobsClass {
         return this.configuration.jobCollection.find(query).countAsync();
     }
 
-    public async execute(jobId: string) {
+    public async execute (jobId: string) {
         check(jobId, String);
 
         Logger.log('Jobs', 'Jobs.execute', jobId);
@@ -223,7 +223,7 @@ class JobsClass {
         Queue.executeJob(job);
     }
 
-    public async findOne(jobName: string, ...parameters: any[]) {
+    public async findOne (jobName: string, ...parameters: any[]) {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -239,7 +239,7 @@ class JobsClass {
         return await this.configuration.jobCollection.findOneAsync(query);
     }
 
-    public register(jobFunctionMap: JobFunctionMap) {
+    public register (jobFunctionMap: JobFunctionMap) {
         // TODO: Verify Type! - `check(..., Object)` is not sufficient!
         // check(newJobs, Object);
 
@@ -252,17 +252,17 @@ class JobsClass {
         // log('Jobs', 'Jobs.register', Object.keys(jobs).length, Object.keys(newJobs).join(', '));
     }
 
-    public remove(jobId: string) {
+    public async remove (jobId: string) {
         check(jobId, String);
 
-        var count = this.configuration.jobCollection.remove({ _id: jobId });
+        var count = await this.configuration.jobCollection.removeAsync({ _id: jobId });
 
         Logger.log('Jobs', `    Jobs.remove ${jobId}`, count);
 
         return count > 0;
     }
 
-    public async replicate(jobId: string, configuration: Partial<JobConfig>) {
+    public async replicate (jobId: string, configuration: Partial<JobConfig>) {
         check(jobId, String);
         // TODO: Verify `configuration`
 
@@ -292,7 +292,7 @@ class JobsClass {
         return replicatedJobId;
     }
 
-    public async reschedule(jobId: string, configuration: Partial<JobConfig>) {
+    public async reschedule (jobId: string, configuration: Partial<JobConfig>) {
         check(jobId, String);
         // TODO: Verify `configuration`
 
@@ -315,7 +315,7 @@ class JobsClass {
             configuration.callback(count === 0, count);
     }
 
-    public async run(jobName: string, ...parameters: any[]) {
+    public async run (jobName: string, ...parameters: any[]) {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -381,11 +381,11 @@ class JobsClass {
         return (error) ? false : job as JobDocument;
     }
 
-    public start(jobArgument?: string | string[]) {
+    public start (jobArgument?: string | string[]) {
         Dominator.start(jobArgument);
     }
 
-    public stop(jobArgument?: string | string[]) {
+    public stop (jobArgument?: string | string[]) {
         Dominator.stop(jobArgument);
     }
 }
