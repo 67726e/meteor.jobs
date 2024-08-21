@@ -63,7 +63,7 @@ class Queue {
 		Logger.log('Jobs', 'queue.start paused:', pausedJobs);
 
 		// TODO: What if N jobs...
-		// Don't assume a database is going to work as expected...
+			// Don't assume a database is going to work as expected...
 		if (pausedJobs[0] === '*') {
 			// Update handle to paused state...
 			this.queryHandle = QUEUE_PAUSED;
@@ -105,17 +105,17 @@ class Queue {
 			if (nextJob) {
 				// TODO: Handle / Document Calculation... what if `Date.now() > `nextJob.due`, etc.
 				const delay = nextJob.due.valueOf() - Date.now();
-
+	
 				// Maximum 24 Hours Timeout - Otherwise, NodeJS Issues...
 				// See: https://github.com/wildhart/meteor.jobs/issues/5
 				const nextJobDelay = Math.min(QUEUE_MILLISECOND_MAX_TIMEOUT, delay);
-
+	
 				Timer.startQueueExecutionTimer(() => {
 					Timer.stopQueueExecutionTimer();
 
 					this.executeJobs();
 				}, nextJobDelay);
-			}
+			}	
 		}
 	}
 
@@ -142,7 +142,7 @@ class Queue {
 
 	private async executeJobs() {
 		// TODO: Review for race-condition
-		// Fix or Document Safety...
+			// Fix or Document Safety...
 		if (this.executing) {
 			console.warn('already executing!');
 
@@ -180,7 +180,7 @@ class Queue {
 
 					if (job) {
 						executedJob = job;
-						executedJobs = [...executedJobs, job,];
+						executedJobs = [ ...executedJobs, job, ];
 
 						this.executeJob(job);
 					} else {
@@ -189,17 +189,17 @@ class Queue {
 
 						// TODO: Implement Me! - Logger?
 					}
-					// Continue executing if we are not in a paused state
-					// Continue executing if we are not out of jobs (found a job on current iteration...)
-				} while (!isPaused() && executedJob != null);
 				// Continue executing if we are not in a paused state
-				// Continue executing if we are not out of jobs (found N > 0 jobs on current iteration...)
+				// Continue executing if we are not out of jobs (found a job on current iteration...)
+				} while (!isPaused() && executedJob != null);
+			// Continue executing if we are not in a paused state
+			// Continue executing if we are not out of jobs (found N > 0 jobs on current iteration...)
 			} while (!isPaused() && executedJobs.length > 0);
 		} catch (error) {
 			console.warn('Jobs', 'executeJobs ERROR');
-			console.warn(error);
+			console.warn(error);	
 		}
-
+		
 		// Update no longer executing jobs, restart timer via `this.start()`...
 		this.executing = false;
 
