@@ -49,7 +49,7 @@ class Queue {
 		}
 	}
 
-	public start() {
+	public async start() {
 		if (this.queryHandle) {
 			if (this.queryHandle !== QUEUE_PAUSED) {
 				// TODO: Refactor me... shouldn't overload functions like this
@@ -69,7 +69,7 @@ class Queue {
 			this.queryHandle = QUEUE_PAUSED;
 		} else {
 			// Create long-living query to watch for incoming jobs...
-			this.queryHandle = this.configuration.jobCollection.find({
+			this.queryHandle = await this.configuration.jobCollection.find({
 				state: 'pending',
 				name: { $nin: pausedJobs },
 			}, {
@@ -120,7 +120,7 @@ class Queue {
 	}
 
 	private findNextJob(executedJob: null | JobDocument, executedJobs: JobDocument[], pausedJobs: string[]) {
-		return this.configuration.jobCollection.findOne({
+		return this.configuration.jobCollection.findOneAsync({
 			state: 'pending',
 			due: { $lte: new Date(), },
 
@@ -140,7 +140,7 @@ class Queue {
 		});
 	}
 
-	private executeJobs() {
+	private async executeJobs() {
 		// TODO: Review for race-condition
 			// Fix or Document Safety...
 		if (this.executing) {
@@ -173,10 +173,10 @@ class Queue {
 				do {
 					// TODO: IMPLEMENT ME! - pass to configuration...
 					// always use the live version of dominator.lastPing.pausedJobs in case jobs are paused/restarted while executing
-					const lastPing = this.configuration.serverCollection.findOne({}, { fields: { pausedJobs: 1 } });
+					const lastPing = await this.configuration.serverCollection.findOneAsync({}, { fields: { pausedJobs: 1 } });
 					const pausedJobs = lastPing?.pausedJobs || [];
 
-					const job: undefined | JobDocument = this.findNextJob(executedJob, executedJobs, pausedJobs);
+					const job: undefined | JobDocument = await this.findNextJob(executedJob, executedJobs, pausedJobs);
 
 					if (job) {
 						executedJob = job;
@@ -323,8 +323,8 @@ class Queue {
 		}
 	}
 
-	private updateJobState(jobId: string, state: JobState) {
-		const count = this.configuration.jobCollection.update({ _id: jobId }, { $set: { state, }});
+	private async updateJobState(jobId: string, state: JobState) {
+		const count = await this.configuration.jobCollection.updateAsync({ _id: jobId }, { $set: { state, } });
 
 		Logger.log('Jobs', 'setJobState', jobId, state, count);
 	}

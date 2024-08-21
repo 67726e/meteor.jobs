@@ -47,7 +47,7 @@ export interface JobDocument {
 
 export interface JobThisType {
     document: JobDocument;
-    replicate(config: Partial<JobConfig>): string | null;
+    replicate(config: Partial<JobConfig>): Promise<string | null>;
     reschedule(config: Partial<JobConfig>): void;
     remove(): boolean;
     success(): void;

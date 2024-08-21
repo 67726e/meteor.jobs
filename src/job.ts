@@ -93,7 +93,7 @@ class Jobs {
         this.collection = this.configuration.jobCollection;
     }
 
-    public clear(state?: '*' | JobState | JobState[], jobName?: string, ...parameters: any[]) {
+    public async clear(state?: '*' | JobState | JobState[], jobName?: string, ...parameters: any[]) {
         const query: Mongo.Query<JobDocument> = {};
 
         // Add `state` Predicate to `query`
@@ -134,7 +134,7 @@ class Jobs {
                 query['arguments.' + index] = parameter;
             });
 
-            const count = this.configuration.jobCollection.remove(query);
+            const count = await this.configuration.jobCollection.removeAsync(query);
 
             // TODO: Why `null` ???
             //  Compare with `reschedule` callback...
@@ -147,7 +147,7 @@ class Jobs {
                 query['arguments.' + index] = parameter;
             });
 
-            return this.configuration.jobCollection.remove(query);
+            return await this.configuration.jobCollection.removeAsync(query);
         }
     }
 
@@ -182,7 +182,7 @@ class Jobs {
             query["arguments." + index] = parameter;
         });
 
-        return this.configuration.jobCollection.find(query).count();    
+        return this.configuration.jobCollection.find(query).countAsync();    
     }
 
     public countPending(jobName: string, ...parameters: any[]) {
@@ -199,15 +199,15 @@ class Jobs {
             query["arguments." + index] = parameter;
         });
 		
-        return this.configuration.jobCollection.find(query).count();
+        return this.configuration.jobCollection.find(query).countAsync();
     }
 
-    public execute(jobId: string) {
+    public async execute(jobId: string) {
         check(jobId, String);
 
         Logger.log('Jobs', 'Jobs.execute', jobId);
 
-        const job = this.configuration.jobCollection.findOne(jobId);
+        const job = await this.configuration.jobCollection.findOneAsync(jobId);
 
         if (!job) {
 			console.warn('Jobs', 'Jobs.execute', 'JOB NOT FOUND', jobId);
@@ -223,7 +223,7 @@ class Jobs {
         Queue.executeJob(job);
     }
 
-	public findOne(jobName: string, ...parameters: any[]) {
+	public async findOne(jobName: string, ...parameters: any[]) {
 		check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -236,7 +236,7 @@ class Jobs {
             query["arguments." + index] = parameter;
         });
 
-        return this.configuration.jobCollection.findOne(query);
+        return await this.configuration.jobCollection.findOneAsync(query);
 	}
 
     public register(jobFunctionMap: JobFunctionMap) {
@@ -252,21 +252,21 @@ class Jobs {
 		// log('Jobs', 'Jobs.register', Object.keys(jobs).length, Object.keys(newJobs).join(', '));
     }
 
-    public remove(jobId: string) {
+    public async remove(jobId: string) {
         check(jobId, String);
 
-        var count = this.configuration.jobCollection.remove({ _id: jobId });
+        var count = await this.configuration.jobCollection.removeAsync({ _id: jobId });
 
         Logger.log('Jobs', `    Jobs.remove ${jobId}`, count);
 
         return count > 0;
     }
 
-    public replicate(jobId: string, configuration: Partial<JobConfig>) {
+    public async replicate(jobId: string, configuration: Partial<JobConfig>) {
         check(jobId, String);
         // TODO: Verify `configuration`
 
-        const job = this.configuration.jobCollection.findOne(jobId);
+        const job = await this.configuration.jobCollection.findOneAsync(jobId);
 
         if (!job) {
             console.warn('Jobs', '    Jobs.replicate', 'JOB NOT FOUND', jobId);
@@ -285,14 +285,14 @@ class Jobs {
         delete replicatedJob._id;
 
         // Create Job Document in Mongo...
-        const replicatedJobId = this.configuration.jobCollection.insert(replicatedJob);
+        const replicatedJobId = await this.configuration.jobCollection.insertAsync(replicatedJob);
 
         Logger.log('Jobs', '    Jobs.replicate', jobId, configuration);
 
         return replicatedJobId;
     }
 
-    public reschedule(jobId: string, configuration: Partial<JobConfig>) {
+    public async reschedule(jobId: string, configuration: Partial<JobConfig>) {
         check(jobId, String);
         // TODO: Verify `configuration` 
 
@@ -304,7 +304,7 @@ class Jobs {
         if (configuration.priority)
             update.priority = configuration.priority;
 
-        const count = this.configuration.jobCollection.update({ _id: jobId }, { $set: update });
+        const count = await this.configuration.jobCollection.updateAsync({ _id: jobId }, { $set: update });
 
         Logger.log('Jobs', '    Jobs.reschedule', jobId, configuration, update.due, count);
 
@@ -315,7 +315,7 @@ class Jobs {
             configuration.callback(count === 0, count);
     }
 
-    public run(jobName: string, ...parameters: any[]) {
+    public async run(jobName: string, ...parameters: any[]) {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -341,7 +341,7 @@ class Jobs {
         // TODO: This should probably not be a thing... 
         //  One should be able to queue N jobs with a one-at-a-time execution limit
         if (configuration?.singular) {
-            if (this.countPending(jobName, parameters[1].slice()) > 0) {
+            if (await this.countPending(jobName, parameters[1]?.slice()) > 0) {
                 error = 'Singular job already exists';
             }
         }
@@ -363,10 +363,10 @@ class Jobs {
             priority: configuration?.priority || 0,
             awaitAsync: configuration?.awaitAsync || undefined,
             due: (configuration) ? getDateFromJobConfiguration(configuration) : new Date(),
-            arguments: (configuration) ? parameters[1].slice() : parameters,
+            arguments: (configuration) ? parameters[1]?.slice() : parameters,
         };
 
-        const jobId = this.configuration.jobCollection.insert(job);
+        const jobId = await this.configuration.jobCollection.insertAsync(job);
 
         if (jobId) {
             job._id = jobId;

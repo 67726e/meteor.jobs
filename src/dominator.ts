@@ -48,7 +48,7 @@ class Dominator {
         private readonly configuration: DominatorConfiguration,
     ) {}
 
-    public initialize() {
+    public async initialize() {
         // Note: The `this.serverId` assignment is a race-condition based on `Meteor.startup(() => Dominator.initialize())`
         // TODO: Refactor Me! - Handle RAIC-style assignment of `this.serverId` with later refactor
         const packageConfiguration = Configuration.get();
@@ -57,12 +57,12 @@ class Dominator {
             (typeof packageConfiguration.setServerId === 'function' && packageConfiguration.setServerId()) ||
             Random.id();
 
-        this.configuration.serverCollection.find({_id: DOMINATOR_ID})
+        await this.configuration.serverCollection.find({_id: DOMINATOR_ID})
             .observe({
                 changed: (newPing) => this.observe(newPing),
             });
 
-        const lastPing = this.configuration.serverCollection.findOne();
+        const lastPing = await this.configuration.serverCollection.findOneAsync();
 
         const isLastPingOld = isPingOld(lastPing);
 
@@ -154,7 +154,7 @@ class Dominator {
         }
     }
 
-    private ping() {
+    private async ping() {
         const newPing = {
             date: new Date(),
             // TODO: Clean Me!
@@ -168,12 +168,12 @@ class Dominator {
             this.lastPing = newPing;
         }
 
-        this.configuration.serverCollection.upsert({ _id: DOMINATOR_ID }, newPing);
+        this.configuration.serverCollection.upsertAsync({ _id: DOMINATOR_ID }, newPing);
 
         Logger.log('Jobs', 'ping', newPing.date, 'paused:', newPing.pausedJobs);
     }
 
-    public start(jobArgument?: string | string[]) {
+    public async start(jobArgument?: string | string[]) {
         let upsertQuery: Mongo.Modifier<DominatorDocument> = {};
 
         if (jobArgument === null || jobArgument === undefined) {
@@ -191,12 +191,12 @@ class Dominator {
             // TODO: Implement Me!
         }
 
-        this.configuration.serverCollection.upsert({ _id: DOMINATOR_ID }, upsertQuery);
+        await this.configuration.serverCollection.upsertAsync({ _id: DOMINATOR_ID }, upsertQuery);
 
         Logger.log('Jobs', 'startJobs', jobArgument, upsertQuery);
     }
 
-    public stop(jobArgument?: string | string[]) {
+    public async stop(jobArgument?: string | string[]) {
         let upsertQuery: Mongo.Modifier<DominatorDocument> = {};
 
         if (jobArgument === null || jobArgument === undefined) {
@@ -212,7 +212,7 @@ class Dominator {
             // TODO: Implement Me!
         }
 
-        this.configuration.serverCollection.upsert({ _id: DOMINATOR_ID }, upsertQuery);
+        await this.configuration.serverCollection.upsertAsync({ _id: DOMINATOR_ID }, upsertQuery);
 
 		Logger.log('Jobs', 'stopJobs', jobArgument, upsertQuery);
     }

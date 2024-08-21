@@ -1,5 +1,5 @@
 
-# simplesigner:jobs
+# 67726e:jobs
 (inspired heavily by [msavin:sjobs](https://github.com/msavin/SteveJobs..meteor.jobs.scheduler.queue.background.tasks))
 
 Run scheduled tasks with the simple jobs queue made just for Meteor. With tight MongoDB integration and fibers-based timing functions, this package is quick, reliable and effortless to use.
@@ -29,11 +29,11 @@ This package is a rewritten release of `wildhart/meteor.jobs`. Unfortunately, th
 First, install the package, and import if necessary:
 
 ```bash
-meteor add simplesigner:jobs
+meteor add 67726e:jobs
 ```
 
 ```javascript
-import { Jobs } from 'meteor/simplesigner:jobs'
+import { Jobs } from 'meteor/67726e:jobs'
 ```
 
 Then, write your background jobs like you would write your methods:
