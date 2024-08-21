@@ -57,7 +57,7 @@ class Dominator {
             (typeof packageConfiguration.setServerId === 'function' && packageConfiguration.setServerId()) ||
             Random.id();
 
-        this.configuration.serverCollection.find({_id: DOMINATOR_ID})
+        await this.configuration.serverCollection.find({_id: DOMINATOR_ID})
             .observe({
                 changed: (newPing) => this.observe(newPing),
             });
