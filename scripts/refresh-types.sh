@@ -4,8 +4,8 @@ set -e
 
 JOB_SOURCE="./src/index.ts"
 JOB_DEFINITION_SOURCE="jobs.d.ts"
-MODULE_NAME="meteor/simplesigner:jobs"
-MODULE_SOURCE="simplesigner-jobs.d.ts"
+MODULE_NAME="meteor/67726e:jobs"
+MODULE_SOURCE="67726e-jobs.d.ts"
 
 # Build w/
 #   `jobs.ts`

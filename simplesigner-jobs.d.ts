@@ -1,5 +1,5 @@
 
-declare module 'meteor/simplesigner:jobs' {
+declare module 'meteor/67726e:jobs' {
 	import { Mongo } from 'meteor/mongo';
 	import { DominatorDocument, JobDocument } from './types';
 	export declare const JobCollection: Mongo.Collection<JobDocument, JobDocument>;

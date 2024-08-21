@@ -7,7 +7,7 @@ TODO: Write Me!
 
 ## Type Definitions
 
-Meteor does not provide a mechanism to expose type definitions to consumers when using `meteor add package@version`. As such, we provide a copy-paste type definition file `simplesigner-jobs.d.ts` in order to ease developer burden.
+Meteor does not provide a mechanism to expose type definitions to consumers when using `meteor add package@version`. As such, we provide a copy-paste type definition file `67726e-jobs.d.ts` in order to ease developer burden.
 
 The folling can be used to generate and test new type definition files to be committed as a part of the development process. See Also: [Scripts](#scripts)
 
@@ -31,7 +31,7 @@ TODO: Find Meteor-idiomatic way of handling packages!
 
 #### /scripts/refresh-types.md
 
-Runs `npx tsc` with additional options to generate our type definitions in `src/*.d.ts`. Copies `*jobs*.d.ts` into `simplesigner-jobs.d.ts` in order to export the same type definitions in a module named with the Meteor package format, `meteor/simplesigner:jobs`.
+Runs `npx tsc` with additional options to generate our type definitions in `src/*.d.ts`. Copies `*jobs*.d.ts` into `67726e-jobs.d.ts` in order to export the same type definitions in a module named with the Meteor package format, `meteor/67726e:jobs`.
 
 ```
 ~/source/meteor.jobs$ ./scripts/refresh-types.sh
