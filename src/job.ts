@@ -332,7 +332,7 @@ class Jobs {
 
         // If a job is `unique`, only one can exist with the same name and arguments
         if (configuration?.unique) {
-            if (this.count(jobName, parameters[1].slice()) > 0) {
+            if ((await this.count(jobName, parameters[1].slice())) > 0) {
                 error = 'Unique job already exists';
             }
         }

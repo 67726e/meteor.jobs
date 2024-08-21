@@ -49,7 +49,7 @@ export interface JobThisType {
     document: JobDocument;
     replicate(config: Partial<JobConfig>): Promise<string | null>;
     reschedule(config: Partial<JobConfig>): void;
-    remove(): boolean;
+    remove(): Promise<boolean>;
     success(): void;
     failure(): void;
 }
