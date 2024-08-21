@@ -182,7 +182,7 @@ class Jobs {
             query["arguments." + index] = parameter;
         });
 
-        return this.configuration.jobCollection.find(query).count();    
+        return this.configuration.jobCollection.find(query).countAsync();    
     }
 
     public countPending(jobName: string, ...parameters: any[]) {
