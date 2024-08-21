@@ -16,10 +16,11 @@ rm -rf /${TMP_DIRECTORY_NAME}/${METEOR_PROJECT_NAME}
 cd /${TMP_DIRECTORY_NAME}
 
 # Create Project to Rob...
-meteor create --release 2.7.3 --typescript ${METEOR_PROJECT_NAME}
+meteor create --release 3.0.1 --typescript ${METEOR_PROJECT_NAME}
 cd ${METEOR_PROJECT_NAME}
 
 meteor npm install --save-dev typescript
+meteor npm install --save-dev @types/meteor
 
 # Return to Project...
 cd ${PROJECT_ROOT}
