@@ -1,6 +1,6 @@
 Package.describe({
 	name: '67726e:jobs',
-	version: '3.0.0-beta-2',
+	version: '3.0.0-beta-3',
 	documentation: 'README.md',
 	git: 'https://github.com/67726e/meteor.jobs',
 	summary: 'Schedule jobs to run at a later time, including multi-server, super efficient',
