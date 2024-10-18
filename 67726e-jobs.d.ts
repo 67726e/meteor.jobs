@@ -58,11 +58,11 @@ declare module 'meteor/67726e:jobs' {
 	    findOne(jobName: string, ...parameters: any[]): Promise<JobDocument>;
 	    register(jobFunctionMap: JobFunctionMap): void;
 	    remove(jobId: string): Promise<boolean>;
-	    replicate(jobId: string, configuration: Partial<JobConfig>): Promise<string>;
+	    replicate(jobId: string, configuration: Partial<JobConfig>): Promise<string | null>;
 	    reschedule(jobId: string, configuration: Partial<JobConfig>): Promise<void>;
 	    run(jobName: string, ...parameters: any[]): Promise<false | JobDocument>;
-	    start(jobArgument?: string | string[]): void;
-	    stop(jobArgument?: string | string[]): void;
+	    start(jobArgument?: string | string[]): Promise<void>;
+	    stop(jobArgument?: string | string[]): Promise<void>;
 	}
 	declare const instance: Jobs;
 	export { instance as Jobs };
@@ -95,13 +95,13 @@ declare module 'meteor/67726e:jobs' {
 	    private executing;
 	    private queryHandle;
 	    constructor(configuration: QueueConfiguration);
-	    restart(): void;
+	    restart(): Promise<void>;
 	    start(): Promise<void>;
 	    stop(): void;
 	    private observe;
 	    private findNextJob;
 	    private executeJobs;
-	    executeJob(job: JobDocument): void;
+	    executeJob(job: JobDocument): Promise<void>;
 	    private updateJobState;
 	}
 	declare const instance: Queue;

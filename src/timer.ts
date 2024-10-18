@@ -13,11 +13,11 @@ class Timer {
 
     public startDominatorPingTimer(callback: Function, delay: number) {
         if (this.dominatorPingTimeout === null) {
-            this.dominatorPingTimeout = Meteor.setTimeout(() => {
+            this.dominatorPingTimeout = Meteor.setTimeout(async () => {
                 // Interval Semantics...
                 this.dominatorPingTimeout = null;
 
-                callback();
+                await callback();
 
                 // Interval Semantics...
                 this.startDominatorPingTimer(callback, delay);

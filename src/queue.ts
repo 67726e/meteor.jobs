@@ -39,13 +39,13 @@ class Queue {
 		private readonly configuration: QueueConfiguration,
 	) {}
 
-	public restart() {
+	public async restart() {
 		// this is called by Jobs.start() and Jobs.stop() when the list of pausedJobs changes
 		// only restart the queue if we're already watching it (maybe jobs were started/paused inside _executeJobs())
 
 		// TODO: Review Me!
 		if (this.queryHandle) {
-			this.start();
+			await this.start();
 		}
 	}
 
@@ -182,7 +182,7 @@ class Queue {
 						executedJob = job;
 						executedJobs = [ ...executedJobs, job, ];
 
-						this.executeJob(job);
+						await this.executeJob(job);
 					} else {
 						executedJob = null;
 						executedJobs = [];
@@ -203,16 +203,16 @@ class Queue {
 		// Update no longer executing jobs, restart timer via `this.start()`...
 		this.executing = false;
 
-		this.start();
+		await this.start();
 	}
 
-	public executeJob(job: JobDocument) {
+	public async executeJob(job: JobDocument) {
 		Logger.log('Jobs', `  ${job.name}`);
 
 		if (typeof Jobs.jobs[job.name] !== 'function') {
 			console.warn('Jobs', 'job does not exist:', job.name);
 
-			this.updateJobState(job._id, 'failure');
+			await this.updateJobState(job._id, 'failure');
 
 			return;
 		}
@@ -225,25 +225,25 @@ class Queue {
 
 		const context: JobThisType = {
 			document: job,
-			failure: function() {
+			failure: function(): Promise<void> {
 				contextOutcome = 'failure';
 
 				return currentContext.updateJobState(job._id, contextOutcome);
 			},
-			remove: function() {
+			remove: function(): Promise<boolean> {
 				contextOutcome = 'remove';
 
 				return Jobs.remove(job._id);
 			},
-			replicate: function(configuration) {
+			replicate: function(configuration): Promise<string | null> {
 				return Jobs.replicate(job._id, configuration);
 			},
-			reschedule: function(configuration) {
+			reschedule: function(configuration): Promise<void> {
 				contextOutcome = 'reschedule';
 
-				Jobs.reschedule(job._id, configuration);
+				return Jobs.reschedule(job._id, configuration);
 			},
-			success: function() {
+			success: function(): Promise<void> {
 				contextOutcome = 'success';
 
 				return currentContext.updateJobState(job._id, contextOutcome);
@@ -253,11 +253,11 @@ class Queue {
 		// Handle Job Completion / State Transition
 		//	If `contextOutcome` is set by job, use value...
 		//	Else, `defaultCompletion` is set by default or developer...
-		const complete = function() {
+		const complete = async function() {
 			if (contextOutcome === null) {
 				// TODO: Refactor Values into `enum`
 				if (Configuration.get().defaultCompletion === 'success') {
-					currentContext.updateJobState(job._id, 'success');
+					await currentContext.updateJobState(job._id, 'success');
 				} else if (Configuration.get().defaultCompletion === 'remove') {
 					// TODO: Implement Me!
 					//	Jobs.remove(job._id)
@@ -265,13 +265,13 @@ class Queue {
 					// TODO: Should this be an `console.erro` rather than a warn???
 					console.warn('Jobs', "Job was not resolved with success, failure, reschedule or remove. Consider using the 'defaultCompletion' option.", job);
 
-					currentContext.updateJobState(job._id, 'failure');
+					await currentContext.updateJobState(job._id, 'failure');
 				}
 			}
 		};
 
 		try {
-			this.updateJobState(job._id, 'executing');
+			await this.updateJobState(job._id, 'executing');
 
 			const result: any = Jobs.jobs[job.name].apply(context, job.arguments);
 
@@ -284,15 +284,14 @@ class Queue {
 				// @ts-ignore
 
 				try {
-					result
-						.then(() => {
-							Logger.log('Jobs', `    Done async job ${job.name}`, `result: ${contextOutcome}`);
+					await result;
 
-							// TODO: Implement Me!
-							// _awaitAsyncJobs.delete(job.name);
+					Logger.log('Jobs', `    Done async job ${job.name}`, `result: ${contextOutcome}`);
 
-							complete();
-						});
+					// 		// TODO: Implement Me!
+					// 		// _awaitAsyncJobs.delete(job.name);
+
+					await complete();
 				} catch (error) {
 					// TODO: Review Me... `${job}` => [object Object] ???
 					console.warn('Jobs', `    Error in async job ${job}`);
@@ -302,14 +301,14 @@ class Queue {
 					// _awaitAsyncJobs.delete(job.name);
 
 					if (contextOutcome !== 'reschedule') {
-						context.failure();
+						await context.failure();
 					}
 				}
 			} else {
 				Logger.log('Jobs', `    Done job ${job.name}`, `result: ${contextOutcome}`);
 
 				// Synchronous Job - Update Now...
-				complete();
+				await complete();
 			}
 		} catch (error) {
 			console.warn('Jobs', 'Error in job', job);
@@ -318,7 +317,7 @@ class Queue {
 
 			// TODO: Wrap in own `try / catch`
 			if (contextOutcome != 'reschedule') {
-				context.failure();
+				await context.failure();
 			}
 		}
 	}

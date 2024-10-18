@@ -169,7 +169,7 @@ class Jobs {
         Logger.log('Jobs', 'Jobs.configure', Object.keys(settings));
     }
 
-    public count(jobName: string, ...parameters: any[]) {
+    public async count(jobName: string, ...parameters: any[]): Promise<number> {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -182,10 +182,12 @@ class Jobs {
             query["arguments." + index] = parameter;
         });
 
-        return this.configuration.jobCollection.find(query).countAsync();    
+        const result = await this.configuration.jobCollection.find(query).countAsync();    
+
+        return result;
     }
 
-    public countPending(jobName: string, ...parameters: any[]) {
+    public async countPending(jobName: string, ...parameters: any[]): Promise<number> {
         check(jobName, String);
         // TODO: Verify `parameters` ???
 
@@ -199,10 +201,12 @@ class Jobs {
             query["arguments." + index] = parameter;
         });
 		
-        return this.configuration.jobCollection.find(query).countAsync();
+        const result = await this.configuration.jobCollection.find(query).countAsync();
+
+        return result;
     }
 
-    public async execute(jobId: string) {
+    public async execute(jobId: string): Promise<void> {
         check(jobId, String);
 
         Logger.log('Jobs', 'Jobs.execute', jobId);
@@ -220,7 +224,7 @@ class Jobs {
             return;
         }
 
-        Queue.executeJob(job);
+        await Queue.executeJob(job);
     }
 
 	public async findOne(jobName: string, ...parameters: any[]) {
@@ -252,7 +256,7 @@ class Jobs {
 		// log('Jobs', 'Jobs.register', Object.keys(jobs).length, Object.keys(newJobs).join(', '));
     }
 
-    public async remove(jobId: string) {
+    public async remove(jobId: string): Promise<boolean> {
         check(jobId, String);
 
         var count = await this.configuration.jobCollection.removeAsync({ _id: jobId });
@@ -262,7 +266,7 @@ class Jobs {
         return count > 0;
     }
 
-    public async replicate(jobId: string, configuration: Partial<JobConfig>) {
+    public async replicate(jobId: string, configuration: Partial<JobConfig>): Promise<string | null> {
         check(jobId, String);
         // TODO: Verify `configuration`
 
@@ -381,12 +385,12 @@ class Jobs {
         return (error) ? false : job as JobDocument;
     }
 
-    public start(jobArgument?: string | string[]) {
-        Dominator.start(jobArgument);
+    public async start(jobArgument?: string | string[]): Promise<void> {
+        await Dominator.start(jobArgument);
     }
 
-    public stop(jobArgument?: string | string[]) {
-        Dominator.stop(jobArgument);
+    public async stop(jobArgument?: string | string[]): Promise<void> {
+        await Dominator.stop(jobArgument);
     }
 }
 

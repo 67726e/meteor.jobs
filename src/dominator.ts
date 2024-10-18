@@ -74,19 +74,19 @@ class Dominator {
         if (lastPing === undefined || lastPing === null) {
             // No Server is Master
             // Assume Control
-            this.upgradeToMaster('no ping');
+            await this.upgradeToMaster('no ping');
         } else if (lastPing.serverId === undefined || lastPing.serverId === null) {
             // No Server is Master
             // Assume Control
-            this.upgradeToMaster('no ping');
+            await this.upgradeToMaster('no ping');
         } else if (lastPing.serverId === this.serverId) {
             // This Server is Master
             // Resume Control
-			this.upgradeToMaster('restarted');
+			await this.upgradeToMaster('restarted');
         } else if (isLastPingOld) {
             // Another Server was Master...
             // Upgrade to Master
-			this.upgradeToMaster('lastPingIsOld ' + JSON.stringify(lastPing));
+			await this.upgradeToMaster('lastPingIsOld ' + JSON.stringify(lastPing));
         } else {
             // Another Server is Master...
             // Stand-By as Slave...
@@ -95,20 +95,20 @@ class Dominator {
         }
     }
 
-    private upgradeToMaster(reason: string) {
+    private async upgradeToMaster(reason: string): Promise<void> {
         Logger.log('Jobs', 'takeControl', reason)
 
         // Initial Ping...
-        this.ping();
+        await this.ping();
 
         // Recurring Ping...  
-        Timer.startDominatorPingTimer(() => {
-            this.ping();
+        Timer.startDominatorPingTimer(async () => {
+            await this.ping();
         // TODO: Why `(Configuration.get().maxWait * 0.8)`
         //  Presumably, a sloppy attempt at ensuring completion prior-to `Configuration.get().maxWait`
         }, Configuration.get().maxWait * 0.8);
 
-        Queue.start();
+        await Queue.start();
     }
 
     private downgradeToSlave() {
@@ -119,7 +119,7 @@ class Dominator {
         Queue.stop();
     }
 
-    private observe(newPing: DominatorDocument) {
+    private async observe(newPing: DominatorDocument): Promise<void> {
 		Logger.log('Jobs', 'dominator.observer', newPing);
 
         if (this.lastPing) {
@@ -138,7 +138,7 @@ class Dominator {
         this.lastPing = newPing;
 
         if (lastPausedJobs.join() !== newPausedJobs.join()) {
-            Queue.restart();
+            await Queue.restart();
         }
 
         Timer.stopDominatorUpgradeTimer();
@@ -168,12 +168,12 @@ class Dominator {
             this.lastPing = newPing;
         }
 
-        this.configuration.serverCollection.upsertAsync({ _id: DOMINATOR_ID }, newPing);
+        await this.configuration.serverCollection.upsertAsync({ _id: DOMINATOR_ID }, newPing);
 
         Logger.log('Jobs', 'ping', newPing.date, 'paused:', newPing.pausedJobs);
     }
 
-    public async start(jobArgument?: string | string[]) {
+    public async start(jobArgument?: string | string[]): Promise<void> {
         let upsertQuery: Mongo.Modifier<DominatorDocument> = {};
 
         if (jobArgument === null || jobArgument === undefined) {
@@ -196,7 +196,7 @@ class Dominator {
         Logger.log('Jobs', 'startJobs', jobArgument, upsertQuery);
     }
 
-    public async stop(jobArgument?: string | string[]) {
+    public async stop(jobArgument?: string | string[]): Promise<void> {
         let upsertQuery: Mongo.Modifier<DominatorDocument> = {};
 
         if (jobArgument === null || jobArgument === undefined) {
