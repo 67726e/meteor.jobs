@@ -292,6 +292,18 @@ class Queue {
 							// _awaitAsyncJobs.delete(job.name);
 
 							complete();
+						})
+						.catch((error: any) => {
+							// TODO: Review Me... `${job}` => [object Object] ???
+							console.warn('Jobs', `    Error in async job ${job}`);
+							console.warn(error);
+
+							// TODO: Implement Me!
+							// _awaitAsyncJobs.delete(job.name);
+
+							if (contextOutcome !== 'reschedule') {
+								context.failure();
+							}
 						});
 				} catch (error) {
 					// TODO: Review Me... `${job}` => [object Object] ???
